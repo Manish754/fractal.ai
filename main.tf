@@ -1,46 +1,22 @@
-# main.tf
-
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
 }
 
-resource "aws_ecs_cluster" "web_cluster" {
-  name = "web-cluster"
+module "vpc" {
+  source = "./vpc"
 }
 
-resource "aws_ecs_task_definition" "web_task" {
-  family                   = "web-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-
-  container_definitions = jsonencode([
-    {
-      name      = "web-container"
-      image     = "your-docker-image-repo:latest"
-      cpu       = 256
-      memory    = 512
-      portMappings = [
-        {
-          containerPort = 3000
-          hostPort      = 3000
-          protocol      = "tcp"
-        }
-      ]
-    }
-  ])
+module "ecs" {
+  source    = "./ecs"
+  vpc_id    = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnet_ids
 }
 
-resource "aws_ecs_service" "web_service" {
-  name            = "web-service"
-  cluster         = aws_ecs_cluster.web_cluster.id
-  task_definition = aws_ecs_task_definition.web_task.arn
-  desired_count   = 1
-
-  network_configuration {
-    subnets          = ["subnet-xxxxxxxxxx"]
-    security_groups  = ["sg-xxxxxxxxxx"]
-    assign_public_ip = true
-  }
+module "iam" {
+  source = "./iam"
 }
+
+output "nginx_public_ip" {
+  value = module.ecs.nginx_public_ip
+}
+
