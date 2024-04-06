@@ -1,13 +1,12 @@
-FROM node:14-alpine
+# Use the official Nginx image as base
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy custom configuration file
+COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY package.json package-lock.json ./
+# Copy static content
+COPY index.html /usr/share/nginx/html/
 
-RUN npm install
+# Expose port 80
+EXPOSE 80
 
-COPY . .
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
